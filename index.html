@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="選類型、照步驟填空，即時組出一段結構化、帶執行順序與驗收標準的 AI 指令。">
+<style>
+:root{color-scheme:light dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>指令轉化器</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --surface2:#F6F8FB;
+  --ink:#131821; --muted:#5A6675; --line:#D7DEE8;
+  --accent:#29459B; --accent-ink:#FFFFFF; --accent-soft:#E3E9F8;
+  --signal:#B0521C; --signal-soft:#F7E9DD;
+  --code-bg:#121821; --code-ink:#E7ECF4; --code-dim:#7F8EA3; --code-key:#93B4FF;
+  --shadow:0 1px 2px rgba(17,26,44,.06),0 8px 24px rgba(17,26,44,.06);
+  --r:10px;
+  --serif:"Noto Serif TC",Georgia,"Songti TC",serif;
+  --sans:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Menlo",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1118; --surface:#161C26; --surface2:#1B2330;
+    --ink:#E8ECF3; --muted:#9BA7B7; --line:#2A3442;
+    --accent:#8FA9F2; --accent-ink:#0D1118; --accent-soft:#1E2A46;
+    --signal:#E5945B; --signal-soft:#2E2117;
+    --code-bg:#080C12; --code-ink:#E7ECF4;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1118; --surface:#161C26; --surface2:#1B2330;
+  --ink:#E8ECF3; --muted:#9BA7B7; --line:#2A3442;
+  --accent:#8FA9F2; --accent-ink:#0D1118; --accent-soft:#1E2A46;
+  --signal:#E5945B; --signal-soft:#2E2117;
+  --code-bg:#080C12; --code-ink:#E7ECF4;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px;padding-block:28px 64px}
+h1,h2,h3{margin:0;text-wrap:balance}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* header */
+header.top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;
+  padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.brand h1{font-family:var(--serif);font-weight:700;font-size:clamp(25px,4.4vw,34px);letter-spacing:.02em}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:48ch;font-size:14px}
+.themebtn{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;
+  font-size:13px;color:var(--muted);white-space:nowrap}
+.themebtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* category grid */
+.eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;
+  display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.groups{display:flex;flex-direction:column;gap:14px;margin-bottom:30px}
+.group{display:grid;grid-template-columns:58px minmax(0,1fr);gap:14px;align-items:start}
+.glabel{font-family:var(--serif);font-weight:700;font-size:15px;color:var(--muted);text-align:right;
+  padding-top:14px;border-right:2px solid var(--line);padding-right:12px;letter-spacing:.08em;
+  writing-mode:horizontal-tb}
+@media (max-width:620px){
+  .group{grid-template-columns:1fr;gap:6px}
+  .glabel{text-align:left;border-right:0;border-left:2px solid var(--line);padding:0 0 0 9px;font-size:13.5px}
+}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+
+/* AI suggestions */
+.aibox{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:16px 18px;margin-bottom:26px}
+.aibox .hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.aibox h2{font-family:var(--serif);font-size:17px;font-weight:700}
+.aibox .asof{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+.airow{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+.aicard{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--surface2)}
+.aicard .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:2px}
+.aicard .nm{font-weight:700;font-size:14px}
+.pill{font-size:10.5px;letter-spacing:.06em;padding:1px 7px;border-radius:999px;font-weight:700;
+  background:var(--accent-soft);color:var(--accent)}
+.pill.alt{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.pill.free{background:var(--signal-soft);color:var(--signal)}
+.aicard .w{font-size:12.5px;color:var(--muted);line-height:1.55}
+.ainote{margin-top:11px;font-size:12.5px;color:var(--ink);background:var(--signal-soft);
+  border-left:3px solid var(--signal);border-radius:0 6px 6px 0;padding:8px 12px;line-height:1.6}
+.cat{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px;display:flex;flex-direction:column;gap:3px;transition:.15s}
+.cat:hover{border-color:var(--accent);transform:translateY(-1px)}
+.cat .n{font-weight:700;font-size:14.5px;line-height:1.4}
+.cat .d{font-size:12.5px;color:var(--muted);line-height:1.5}
+.cat[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.cat[aria-pressed="true"] .n,.cat[aria-pressed="true"] .d{color:var(--accent-ink)}
+.cat[aria-pressed="true"] .d{opacity:.82}
+
+/* two column */
+.cols{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:1fr;gap:20px}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.panel-hd{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;
+  align-items:baseline;gap:12px;flex-wrap:wrap}
+.panel-hd h2{font-family:var(--serif);font-size:18px;font-weight:700}
+.panel-hd .sub{font-size:12.5px;color:var(--muted)}
+
+/* banner */
+.banner{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:var(--signal-soft);border:1px solid var(--line);border-left:3px solid var(--signal);
+  border-radius:8px;padding:9px 13px;margin:16px 18px 0;font-size:13px;color:var(--ink)}
+.banner button{background:none;border:1px solid var(--signal);color:var(--signal);border-radius:999px;
+  padding:3px 12px;font-size:12.5px;font-weight:500}
+
+/* steps / form */
+.steps{padding:6px 18px 20px}
+.step{padding:18px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:0;padding-bottom:4px}
+.step-hd{display:flex;gap:11px;align-items:baseline;margin-bottom:12px}
+.num{flex:none;width:23px;height:23px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  font-size:12px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);
+  transform:translateY(3px)}
+.step-hd h3{font-size:15.5px;font-weight:700}
+.step-hd .why{font-size:12.5px;color:var(--muted);font-weight:400}
+.f{margin-bottom:14px}
+.f:last-child{margin-bottom:0}
+.f label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.f .hint{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+input[type=text],textarea{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;
+  padding:9px 11px;font-family:inherit;font-size:14px;color:var(--ink);resize:vertical}
+input[type=text]::placeholder,textarea::placeholder{color:var(--muted);opacity:.75}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+textarea{min-height:66px;line-height:1.65}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px;
+  color:var(--muted);transition:.12s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+
+/* output */
+.out-wrap{position:sticky;top:max(16px,env(safe-area-inset-top,0px))}
+.flowbox{padding:15px 18px;border-bottom:1px solid var(--line);background:var(--surface2);
+  border-radius:0}
+.flowbox h4{margin:0 0 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.flowbox ol{margin:0;padding-left:19px;font-size:13px;color:var(--ink);line-height:1.6}
+.flowbox li{margin-bottom:3px}
+pre.out{margin:0;background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;
+  line-height:1.72;padding:18px;max-height:min(62vh,640px);overflow:auto;white-space:pre-wrap;word-break:break-word;
+  tab-size:2}
+.acts{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:8px 16px;font-size:13.5px;
+  font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:hover{border-color:var(--accent)}
+.count{margin-left:auto;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.saved{padding:0 18px 13px;font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--signal);flex:none}
+
+/* polish */
+.polish{border-top:1px solid var(--line);background:var(--surface2)}
+.phd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px 0}
+.phd h4{margin:0;font-family:var(--serif);font-size:15px;font-weight:700}
+.btn.sm{padding:3px 11px;font-size:12px;border-radius:999px}
+.pout{margin:10px 18px 0;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  font-family:var(--sans);font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;
+  max-height:min(52vh,540px);overflow:auto;color:var(--ink)}
+.pout.think{color:var(--muted);font-style:italic}
+.pacts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px 16px}
+.phint{font-size:11.5px;color:var(--muted);padding:0 18px 14px}
+.miss{padding:10px 18px 0;font-size:12.5px;color:var(--signal)}
+
+/* tips footer */
+.tips{margin-top:30px;border-top:1px solid var(--line);padding-top:22px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.tip h5{margin:0 0 5px;font-size:13.5px;font-family:var(--serif);font-weight:700}
+.tip p{margin:0;font-size:13px;color:var(--muted);line-height:1.65}
+.empty{padding:40px 18px;text-align:center;color:var(--muted);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <h1>指令轉化器</h1>
+    <p>先選類型，照著步驟把腦中的想法填成欄位，右邊會即時組成一段結構化的指令。不用一次想清楚，填到哪就有哪。</p>
+  </div>
+  <button class="themebtn" id="themebtn" type="button">切換深色</button>
+</header>
+
+<div class="eyebrow">第一步 · 這次要做什麼</div>
+<div class="groups" id="cats"></div>
+<div class="aibox" id="aibox" hidden>
+  <div class="hd"><h2>這類任務建議丟給</h2><span class="asof">2026/09 的狀況，會變</span></div>
+  <div class="airow" id="airow"></div>
+  <div id="ainote"></div>
+</div>
+
+<div class="cols">
+  <section class="panel" id="formpanel">
+    <div class="panel-hd">
+      <h2 id="formtitle">填寫順序</h2>
+      <span class="sub" id="formsub"></span>
+    </div>
+    <div id="banner"></div>
+    <div class="steps" id="steps"><div class="empty">從上面選一個類型開始。</div></div>
+  </section>
+
+  <section class="out-wrap">
+    <div class="panel">
+      <div class="panel-hd">
+        <h2>產出的指令</h2>
+        <span class="sub">複製後直接貼給 AI</span>
+      </div>
+      <div class="flowbox" id="flowbox" hidden>
+        <h4>內建的執行順序</h4>
+        <ol id="flowlist"></ol>
+      </div>
+      <div class="miss" id="miss" hidden></div>
+      <pre class="out" id="out">選擇類型後，這裡會即時長出指令。</pre>
+      <div class="acts">
+        <button class="btn primary" id="copy" type="button">複製指令</button>
+        <button class="btn" id="polishBtn" type="button" hidden>請 Claude 潤飾</button>
+        <button class="btn" id="clear" type="button">清空重填</button>
+        <span class="count" id="count"></span>
+      </div>
+      <div class="saved" id="saved"><span class="dot"></span><span id="savedtxt">填的內容會自動暫存在這台裝置</span></div>
+      <div class="polish" id="polish" hidden>
+        <div class="phd">
+          <h4>潤飾結果</h4>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" id="pstop" type="button" hidden>停止</button>
+            <button class="btn sm" id="pclose" type="button">收起</button>
+          </div>
+        </div>
+        <pre class="pout" id="pout"></pre>
+        <div class="pacts">
+          <button class="btn" id="pcopy" type="button">複製潤飾版</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="tips">
+  <div class="tip"><h5>寧可空著，不要亂填</h5><p>沒想清楚的欄位留白就好。指令結尾已經寫死一條規則：資訊不足時 AI 要先問你，不准自己假設就開工。</p></div>
+  <div class="tip"><h5>一次一步，不要一次要全部</h5><p>每個類型都內建了執行順序，要求 AI 做完一步先停下來給你確認。這是避免「跑很遠才發現方向錯」最有效的一句話。</p></div>
+  <div class="tip"><h5>驗收標準先寫</h5><p>「怎樣算做好」寫在前面，AI 才有辦法自己檢查。做完不滿意時，也能直接指著這幾行說哪一條沒過。</p></div>
+</div>
+</div>
+
+<script>
+const CATS=[
+{
+ id:"copy", n:"行銷文案 / 企劃", d:"貼文、廣告、電子報、活動企劃",
+ role:"資深行銷企劃與文案寫手，熟悉台灣市場的語感與各平台調性",
+ steps:[
+  {t:"定位任務", why:"先講清楚在賣什麼",
+   f:[{k:"taskType",l:"要寫哪一種",t:"chips",sec:"goal",
+       o:["社群貼文","廣告文案","電子報","活動企劃書","品牌標語","銷售頁文案","新聞稿","短影音腳本"],ex:"社群貼文"},
+      {k:"product",l:"產品／服務是什麼",t:"area",sec:"bg",
+       ph:"名稱、賣什麼、價格帶、和別人不一樣的地方",ex:"手沖咖啡豆訂閱制，每月寄一包 200g 單品豆，$480／月，主打小農直送＋每包附沖煮參數卡"}]},
+  {t:"對象與目的", why:"寫給誰看、看完要幹嘛",
+   f:[{k:"audience",l:"目標受眾",t:"text",sec:"bg",
+       ph:"年齡、身分、痛點、現在都怎麼解決",ex:"25-40 歲上班族，在家想喝好咖啡但怕麻煩也不會挑豆"},
+      {k:"action",l:"看完要他做什麼",t:"chips",sec:"goal",
+       o:["點連結購買","加入 LINE","留言互動","分享","報名活動","填表單","單純品牌認知"],ex:"點連結購買"}]},
+  {t:"通路與規格", why:"平台決定語氣和長度",
+   f:[{k:"platform",l:"發在哪（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["Instagram","Threads","Facebook","LINE 官方帳號","小紅書","YouTube","官網","實體文宣"],ex:"Instagram"},
+      {k:"spec",l:"篇幅與規格",t:"text",sec:"limit",
+       ph:"字數上限、要幾張圖的文案、要不要分段",ex:"單篇 300 字內，前 2 行要能單獨看懂"}]},
+  {t:"內容素材", why:"沒給素材就只會生出空話",
+   f:[{k:"musts",l:"一定要提到的重點",t:"area",sec:"detail",
+       ph:"優惠、數字、得獎、限時、保證、真實客人的話",ex:"首月 $299、可隨時停訂、目前 2,000+ 訂戶、每包附沖煮參數卡"},
+      {k:"tone",l:"語氣調性（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["親切口語","專業權威","幽默","高級質感","熱血激勵","療癒平靜","直球促銷"],ex:"親切口語"}]},
+  {t:"界線與數量", why:"先畫紅線省掉一輪修改",
+   f:[{k:"bans",l:"不能出現的東西",t:"text",sec:"limit",
+       ph:"誇大療效、比較競品、簡體字、特定字眼",ex:"不要用「最」「第一」等絕對用語，不要簡體字，不要emoji開頭"},
+      {k:"count",l:"要幾個版本",t:"text",sec:"out",ph:"例：3 個版本，各附一句標題",ex:"3 個版本，每版附 1 句標題 + 5 個 hashtag"}]}],
+ flow:["用 3 行重述你理解的受眾、痛點與目標行動","提出 3 個不同切角的方向，停下來等我選一個",
+       "我選定後再展開完整內文","附上 CTA、hashtag 或標籤建議","最後列出可以 A/B 測試的替換句"],
+ check:["開頭兩行就能讓指定受眾對號入座","只有一個明確的行動呼籲，不要塞很多","符合指定字數與平台格式","沒有出現禁止清單裡的字眼"]
+},
+{
+ id:"web", n:"網站 / 工作台 / 轉檔", d:"官網、後台、表單、檔案處理工具",
+ role:"資深前端工程師兼產品設計師，擅長把模糊需求收斂成先跑得動的最小版本",
+ steps:[
+  {t:"決定型態", why:"網站和工具做法完全不同",
+   f:[{k:"kind",l:"要做哪一種",t:"chips",sec:"goal",
+       o:["形象官網","單頁銷售頁","後台工作台 / Dashboard","表單收集工具","檔案轉檔工具","資料查詢頁","計算機 / 小工具"],ex:"檔案轉檔工具"},
+      {k:"purpose",l:"這東西要解決什麼問題",t:"area",sec:"goal",
+       ph:"現在沒有它的時候，你是怎麼處理的、卡在哪",ex:"每週要把廠商寄來的 5 份 CSV 手動合併成一張報價總表，現在用 Excel 複製貼上要一小時還常貼錯"}]},
+  {t:"使用者與情境", why:"決定介面要多簡單",
+   f:[{k:"user",l:"誰會用",t:"text",sec:"bg",ph:"只有你自己？同事？客戶？電腦程度如何",ex:"我和兩位同事，不會寫程式"},
+      {k:"scene",l:"什麼時候、在哪用",t:"text",sec:"bg",ph:"每天／偶爾、電腦／手機、需不需要多人同時用",ex:"每週一在公司電腦上用一次，Chrome"}]},
+  {t:"功能清單", why:"條列出來才知道範圍多大",
+   f:[{k:"features",l:"需要哪些功能（一行一個）",t:"area",sec:"detail",
+       ph:"用「我可以…」開頭寫，例：我可以一次拖入多個檔案",
+       ex:"我可以一次拖入多個 CSV\n自動比對欄位名稱並合併\n欄位對不上時要提示我手動對應\n可以匯出成一份 Excel"}]},
+  {t:"資料", why:"資料格式決定一半的工作量",
+   f:[{k:"data",l:"資料從哪來、長什麼樣",t:"area",sec:"detail",
+       ph:"欄位名稱、大概幾筆、有沒有髒資料，可以直接貼幾行範例",
+       ex:"每份 CSV 欄位為 品名/規格/單價/交期，每份約 200 筆，偶爾會有空白列和全形數字"}]},
+  {t:"技術與風格", why:"不說就會拿到你打不開的東西",
+   f:[{k:"tech",l:"技術限制（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["單一 HTML 檔就好","不要用外部套件","要能離線使用","資料不能上傳雲端","手機也要能用","React","Python 腳本"],ex:"單一 HTML 檔就好"},
+      {k:"style",l:"視覺風格",t:"text",sec:"limit",ph:"素雅／科技感／參考某個網站，或「不重要，好用就好」",ex:"乾淨素雅，能一眼看懂就好"}]},
+  {t:"交付方式", why:"你要的是檔案還是說明",
+   f:[{k:"deliver",l:"這次要給我什麼",t:"chips",sec:"out",
+       o:["可以直接打開的檔案","完整專案原始碼","先給規格與畫面結構","先給畫面草稿再寫程式"],ex:"可以直接打開的檔案"}]}],
+ flow:["先重述需求，列出你打算做的功能清單與畫面結構，等我確認再動手",
+       "確認後只做核心功能的最小可用版本，先能跑就好",
+       "我試用回饋後再補次要功能","補上錯誤處理、空資料狀態與手機版排版",
+       "交付時附上「怎麼使用」和「之後想改哪裡要動哪段」"],
+ check:["打開就能用，不用安裝或設定","核心流程不看說明也能走完","手機寬度不跑版","檔案格式不對時會明確提示，不會整個壞掉"]
+},
+{
+ id:"game", n:"遊戲 / 網頁遊戲", d:"小遊戲、互動、關卡設計",
+ role:"網頁遊戲開發者兼關卡設計師，重視手感與第一分鐘的體驗",
+ steps:[
+  {t:"類型與核心", why:"一句話講不清楚就還沒想好",
+   f:[{k:"genre",l:"遊戲類型",t:"chips",sec:"goal",
+       o:["益智解謎","跑酷閃避","射擊","卡牌","文字冒險","記憶配對","塔防","放置掛機","節奏"],ex:"益智解謎"},
+      {k:"core",l:"核心玩法一句話",t:"text",sec:"goal",
+       ph:"玩家要做什麼、為什麼好玩",ex:"把掉下來的方塊配對消除，消得越快分數倍率越高"}]},
+  {t:"操作與規則", why:"手感問題八成出在這",
+   f:[{k:"control",l:"怎麼操作",t:"chips",multi:1,sec:"detail",
+       o:["滑鼠點擊","滑鼠拖曳","鍵盤方向鍵","空白鍵","觸控點擊","觸控滑動"],ex:"滑鼠點擊"},
+      {k:"rules",l:"勝負條件與計分",t:"area",sec:"detail",
+       ph:"怎樣算贏、怎樣算輸、分數怎麼算、有沒有時間限制",
+       ex:"60 秒限時，消除一組 +10 分，連續消除有 2 倍加成，時間到結算總分"}]},
+  {t:"難度與關卡", why:"沒講就會做出第一關就卡死的遊戲",
+   f:[{k:"levels",l:"關卡與難度曲線",t:"text",sec:"detail",
+       ph:"幾關、難度怎麼遞增、還是無限模式",ex:"無限模式，每 30 秒速度提升一階"}]},
+  {t:"美術與音效", why:"不講就會拿到灰色方塊",
+   f:[{k:"art",l:"視覺風格",t:"text",sec:"limit",ph:"像素風／扁平／霓虹／手繪，配色偏好",ex:"扁平幾何＋高彩度配色，深色背景"},
+      {k:"audio",l:"音效（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["不要音效","簡單合成音效","背景音樂","要有靜音開關"],ex:"簡單合成音效"}]},
+  {t:"技術與必備功能", why:"這些漏掉最容易被退",
+   f:[{k:"tech",l:"技術限制",t:"chips",multi:1,sec:"limit",
+       o:["單一 HTML 檔","Canvas","純 CSS/DOM","不要外部套件","手機要能玩"],ex:"單一 HTML 檔"},
+      {k:"feats",l:"一定要有（可複選）",t:"chips",multi:1,sec:"detail",
+       o:["分數顯示","最高分紀錄","一鍵重玩","暫停","開場教學","難度選擇","結算畫面"],ex:"一鍵重玩"}]}],
+ flow:["先用文字描述一輪完整的遊玩流程（開始 → 操作 → 結束），等我確認",
+       "確認後做出可以玩的核心循環，美術先用最簡單的","我試玩後調整速度、手感與難度",
+       "再加上分數、音效、重玩與結算畫面","最後檢查手機觸控與不同螢幕尺寸"],
+ check:["不看說明就知道怎麼玩","第一局在 30 秒內能結束","失敗後一鍵就能重來","手機上可以正常操作"]
+},
+{
+ id:"app", n:"App / 產品", d:"需求規格、流程、MVP、開發拆解",
+ role:"產品經理兼全端工程師，擅長把想法切成可執行的 MVP 並誠實指出風險",
+ steps:[
+  {t:"定位", why:"先把野心收斂成一句話",
+   f:[{k:"kind",l:"App 類型",t:"chips",sec:"goal",
+       o:["工具型","記錄追蹤","社群","電商","預約排程","學習","健康","內部管理"],ex:"記錄追蹤"},
+      {k:"pitch",l:"一句話定位",t:"text",sec:"goal",
+       ph:"給（誰）在（什麼情況）可以（做什麼）",ex:"給接案設計師在每天結束時，30 秒記完當天各案花了多少時間"}]},
+  {t:"用戶與痛點", why:"沒有痛點就沒有功能優先序",
+   f:[{k:"user",l:"目標用戶",t:"text",sec:"bg",ph:"身分、人數規模、付費意願",ex:"獨立接案者，同時接 3-5 個案子"},
+      {k:"pain",l:"現在他們怎麼解決、哪裡痛",t:"area",sec:"bg",
+       ph:"現有做法＋為什麼不夠好",ex:"用 Excel 或備忘錄記，常常忘記記，月底要對帳時湊不出工時"}]},
+  {t:"MVP 範圍", why:"最多三個，其他先放後面",
+   f:[{k:"mvp",l:"這版一定要有的功能（最多 3 個）",t:"area",sec:"detail",
+       ph:"一行一個，寫「我可以…」",ex:"我可以新增案子\n我可以用一個按鈕開始／停止計時\n我可以看每個案子這個月累計幾小時"},
+      {k:"later",l:"明確先不做的",t:"text",sec:"limit",ph:"寫出來，AI 才不會偷偷加",ex:"不做多人協作、不做開立發票、不做雲端同步"}]},
+  {t:"畫面", why:"有畫面清單才估得出工作量",
+   f:[{k:"screens",l:"預計有哪些畫面",t:"area",sec:"detail",
+       ph:"一行一個畫面，可加一句這頁在做什麼",ex:"案子列表（看全部案子與本月工時）\n計時中畫面\n單一案子明細\n設定"}]},
+  {t:"資料與技術", why:"決定能不能真的做出來",
+   f:[{k:"data",l:"要存哪些資料、存在哪",t:"text",sec:"detail",ph:"欄位、要不要登入、離線可用嗎",ex:"案子名稱、時段紀錄；存在手機本機，不用登入"},
+      {k:"stack",l:"平台與技術",t:"chips",multi:1,sec:"limit",
+       o:["iOS","Android","網頁 App / PWA","React Native","Flutter","還沒決定，請建議"],ex:"網頁 App / PWA"}]},
+  {t:"這次要的產出", why:"別讓它一次寫完全部程式",
+   f:[{k:"out",l:"這輪先給我",t:"chips",sec:"out",
+       o:["需求規格書","畫面流程圖","可執行的原型","資料結構設計","開發順序與里程碑"],ex:"需求規格書"}]}],
+ flow:["先確認範圍：列出「這版要做」與「這版不做」兩張清單，等我確認",
+       "畫出主要流程：從打開 App 到完成核心任務的每一步","逐畫面列出元素與三種狀態（載入／空／錯誤）",
+       "再談資料結構與介面規格","最後給開發順序與里程碑，並標出你覺得風險最高的部分"],
+ check:["MVP 控制在三個功能以內","每個畫面都想過空狀態與錯誤狀態","核心任務三步以內完成","有明確寫出這版不做什麼"]
+},
+{
+ id:"data", n:"資料分析 / 報表", d:"清洗、統計、圖表、定期報表",
+ role:"資料分析師，重視計算口徑正確與每個數字都能追溯來源",
+ steps:[
+  {t:"任務與問題", why:"先講要回答什麼，不是先講要什麼圖",
+   f:[{k:"kind",l:"任務類型",t:"chips",sec:"goal",
+       o:["資料清洗","統計分析","做圖表","產出報表","樞紐彙總","定期自動月報","找異常"],ex:"產出報表"},
+      {k:"q",l:"你想回答什麼問題",t:"area",sec:"goal",
+       ph:"用問句寫，例：哪個通路的回購率最高？為什麼三月掉下來？",
+       ex:"哪些品項毛利率低於 20%？三月營收比二月掉的主因是什麼？"}]},
+  {t:"資料現況", why:"髒資料先講，不然數字全錯",
+   f:[{k:"src",l:"資料在哪、有哪些欄位",t:"area",sec:"bg",
+       ph:"檔名、格式、筆數、主要欄位；可以直接貼表頭",
+       ex:"sales_2026.xlsx，約 12,000 筆，欄位：日期/通路/品項/數量/售價/成本"},
+      {k:"dirty",l:"已知的資料問題",t:"text",sec:"bg",ph:"缺值、重複、單位不一致、日期格式亂",ex:"成本欄有空白，通路名稱有全形半形混用"}]},
+  {t:"分析設定", why:"口徑不講清楚就會算出兩種答案",
+   f:[{k:"dims",l:"要拆的維度",t:"text",sec:"detail",ph:"時間／通路／品類／客群",ex:"依通路 × 品類，按月"},
+      {k:"metrics",l:"要算的指標與定義",t:"text",sec:"detail",
+       ph:"指標名稱＋算法，例：毛利率＝(售價-成本)/售價",ex:"營收、毛利率＝(售價-成本)/售價、月成長率"},
+      {k:"period",l:"資料期間與排除條件",t:"text",sec:"detail",ph:"哪段期間、要不要排除退貨／測試資料",ex:"2026/01-2026/03，排除退貨與內部測試單"}]},
+  {t:"輸出", why:"給誰看決定要多細",
+   f:[{k:"form",l:"輸出形式（可複選）",t:"chips",multi:1,sec:"out",
+       o:["Excel 檔","圖表","簡報","文字摘要","可重跑的 Python 腳本"],ex:"Excel 檔"},
+      {k:"aud",l:"給誰看",t:"text",sec:"out",ph:"老闆／同事／客戶，他們在意什麼",ex:"給老闆看，只在意結論和要砍哪些品項"}]}],
+ flow:["先讀資料並回報：欄位、筆數、缺值與異常值，等我確認再往下算",
+       "說明你打算採用的計算口徑（分子分母、期間、排除條件）","算完先給關鍵數字，先不要做圖",
+       "數字我確認後，再做圖表與排版","最後寫 3 點結論與 1 個建議行動"],
+ check:["每個數字都說得出來源欄位與算法","有標註資料期間與排除條件","異常值有單獨說明不是默默刪掉","結論是可行動的，不是重述數字"]
+},
+{
+ id:"visual", n:"影像 / 影片 / 設計", d:"圖片生成、分鏡腳本、視覺設計",
+ role:"視覺設計總監兼影像指導，能把抽象的感覺翻成具體的畫面描述",
+ steps:[
+  {t:"任務與用途", why:"用途決定風格",
+   f:[{k:"kind",l:"要做什麼",t:"chips",sec:"goal",
+       o:["AI 圖片生成指令","影片腳本","分鏡表","海報設計","社群圖設計","簡報視覺","Logo 提案"],ex:"AI 圖片生成指令"},
+      {k:"theme",l:"主題與使用場合",t:"text",sec:"goal",ph:"要放在哪、給誰看、想讓人有什麼感覺",
+       ex:"咖啡豆訂閱的 IG 主視覺，想讓人覺得溫暖但不土"}]},
+  {t:"規格", why:"尺寸錯了一切重來",
+   f:[{k:"size",l:"尺寸／長度",t:"text",sec:"limit",ph:"1:1、9:16、A4、30 秒、幾張圖",ex:"1:1 正方形，三張一組"},
+      {k:"fmt",l:"檔案格式",t:"chips",multi:1,sec:"out",o:["PNG","JPG","SVG","PDF","MP4","只要文字描述／腳本"],ex:"PNG"}]},
+  {t:"風格", why:"形容詞越具體越準",
+   f:[{k:"style",l:"風格描述或參考",t:"text",sec:"limit",
+       ph:"攝影／插畫／3D、光線、年代感、參考誰的做法（用形容不要指名作品）",
+       ex:"自然光攝影感，暖色調，淺景深，木質桌面"},
+      {k:"mood",l:"情緒（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["溫暖","乾淨極簡","高級","活潑","懷舊","高科技","手作感"],ex:"溫暖"}]},
+  {t:"內容與禁忌", why:"畫面裡要有什麼、不能有什麼",
+   f:[{k:"musts",l:"必須出現的元素或文字",t:"area",sec:"detail",
+       ph:"主體、配件、文案、logo 位置",ex:"一包咖啡豆、手沖壺、蒸氣；右下留白放 logo"},
+      {k:"bans",l:"不要出現",t:"text",sec:"limit",ph:"人臉、文字、特定顏色、雜亂背景",ex:"不要人臉、不要圖上加英文字"}]},
+  {t:"數量", why:"一次一版比較好改",
+   f:[{k:"count",l:"要幾版",t:"text",sec:"out",ph:"建議先 1 版看方向",ex:"先 1 版，我看過再調"}]}],
+ flow:["先用文字描述你打算產出的畫面內容，等我確認方向","確認後先出 1 版，不要一次出四版",
+       "我給修改意見後只調我指出的地方，其他保持不變","最後輸出指定尺寸與格式的完整版本"],
+ check:["符合指定尺寸與安全區","主題一眼可辨識","文字沒有被裁切或變形","沒有出現禁止元素"]
+},
+{
+ id:"auto", n:"自動化 / 流程腳本", d:"批次處理、抓資料、排程、檔案整理",
+ role:"自動化工程師，重視安全、可回溯，絕不在未經確認前動到原始檔",
+ steps:[
+  {t:"任務與現況", why:"先描述手動流程，機器才學得會",
+   f:[{k:"kind",l:"任務類型",t:"chips",sec:"goal",
+       o:["批次改檔名","檔案整理分類","格式轉換","網頁抓資料","API 串接","定時排程","自動通知","表格自動填寫"],ex:"檔案整理分類"},
+      {k:"now",l:"現在你是怎麼手動做的",t:"area",sec:"bg",
+       ph:"一步一步寫，包含你怎麼判斷、遇到例外怎麼處理",
+       ex:"每天把下載資料夾的發票 PDF 依照檔名日期搬到 2026/月份 資料夾，檔名沒日期的就先丟到「待處理」"}]},
+  {t:"輸入與輸出", why:"界定清楚才不會誤傷檔案",
+   f:[{k:"input",l:"輸入是什麼、在哪",t:"text",sec:"detail",ph:"資料夾路徑、檔案類型、大概數量",ex:"下載資料夾裡的 PDF，每天約 20 個"},
+      {k:"output",l:"期望結果",t:"text",sec:"detail",ph:"放到哪、命名規則、格式",ex:"搬到 D:/發票/2026/MM，檔名改成 日期_廠商.pdf"}]},
+  {t:"環境與頻率", why:"能不能在你電腦上跑",
+   f:[{k:"env",l:"執行環境",t:"chips",multi:1,sec:"limit",
+       o:["Python","Node.js","Excel VBA","Google Apps Script","n8n","手機捷徑","不確定，請建議"],ex:"Python"},
+      {k:"freq",l:"多久跑一次",t:"chips",sec:"limit",o:["手動執行","每天","每週","每月","檔案一進來就跑"],ex:"每天"}]},
+  {t:"例外與安全", why:"這段不寫，出事最慘",
+   f:[{k:"fail",l:"遇到例外要怎麼辦",t:"text",sec:"detail",
+       ph:"檔名格式不對、重複、檔案被占用時",ex:"檔名判斷不出日期就搬到「待處理」不要猜；同名檔案不覆蓋，加流水號"},
+      {k:"safe",l:"安全與權限注意",t:"text",sec:"limit",
+       ph:"不能刪原檔、不能上傳、需要帳密的部分怎麼處理",ex:"絕對不能刪除原檔，先複製再移動；不要把檔案傳到任何雲端"}]}],
+ flow:["先把流程拆成步驟寫給我看，確認我沒有漏講的判斷條件",
+       "用 2-3 個檔案試跑，且先用複製不要動原檔","我確認結果正確後再跑全量",
+       "加上錯誤處理與執行紀錄（哪些成功、哪些跳過、為什麼）","最後告訴我怎麼設定排程、怎麼停掉、怎麼還原"],
+ check:["有試跑模式，不會一次改到全部","原始檔有備份或不被更動","失敗時會明確報錯不是安靜跳過","有執行紀錄可以回頭查"]
+},
+{
+ id:"fate", n:"命理 / 占卜", d:"塔羅、紫微、八字、占星、易經",
+ role:"熟悉多種命理系統的解讀者，擅長把符號與格局翻成可以自己判斷的生活語言，不做絕對斷言",
+ note:["這是自我覺察與參考用途的解讀，不取代醫療、法律或財務的專業判斷。",
+       "不要預測死亡或重大疾病，也不要替我決定投資買賣。",
+       "每個結論請說明是根據哪個符號、宮位或牌面，讓我能自己判斷合不合理。"],
+ steps:[
+  {t:"選系統與需求", why:"不同系統看的東西不一樣",
+   f:[{k:"system",l:"用哪一套",t:"chips",sec:"goal",gate:1,
+       o:["塔羅","紫微斗數","八字","西洋占星","易經卜卦","生命靈數","人類圖","綜合參考"],ex:"塔羅"},
+      {k:"want",l:"這次想要的是",t:"chips",sec:"goal",
+       o:["針對一個問題解讀","完整命盤解讀","年度／流年運勢","幫我整理排盤資料","教我怎麼自己看"],ex:"針對一個問題解讀"}]},
+  {t:"問題本身", why:"問法決定解讀品質，最關鍵的一步",
+   f:[{k:"q",l:"你想問什麼",t:"area",sec:"goal",
+       ph:"寫成「在⋯⋯的情況下，我該⋯⋯」會比「我會不會⋯⋯」好很多",
+       ex:"我在考慮年底離職轉做自由接案，在現在這個時間點，我該注意什麼、準備什麼？"},
+      {k:"ctx",l:"你的現況背景",t:"area",sec:"bg",
+       ph:"發生了什麼、糾結多久了、有哪些選項在猶豫",
+       ex:"現職做 5 年，穩定但沒成長；手上有半年生活費；家人反對"}]},
+  {t:"牌面資料", why:"塔羅要先有牌才解得了",
+   f:[{k:"draw",l:"牌怎麼來",t:"chips",sec:"detail",when:{k:"system",in:["塔羅","易經卜卦"]},
+       o:["我已經抽好了，寫在下面","請你幫我抽／起卦"],ex:"我已經抽好了，寫在下面"},
+      {k:"cards",l:"牌陣與抽到的牌",t:"area",sec:"detail",when:{k:"system",in:["塔羅"]},
+       ph:"牌陣名稱＋每個位置的牌與正逆位",
+       ex:"三張牌（過去／現在／未來）：寶劍七逆位、聖杯四、權杖騎士"},
+      {k:"hex",l:"卦象或起卦方式",t:"text",sec:"detail",when:{k:"system",in:["易經卜卦"]},
+       ph:"卦名、爻的陰陽，或你用什麼方式起的卦"}]},
+  {t:"出生資料", why:"時辰差一個就換一張盤",
+   f:[{k:"birth",l:"出生年月日、時間、地點",t:"text",sec:"detail",
+       when:{k:"system",in:["紫微斗數","八字","西洋占星","生命靈數","人類圖","綜合參考"]},
+       ph:"例：1993/07/14 下午 3:20，台中市",ex:"1993/07/14 下午 3:20，台中市"},
+      {k:"birthSure",l:"時辰確定嗎",t:"chips",sec:"detail",
+       when:{k:"system",in:["紫微斗數","八字","西洋占星","人類圖","綜合參考"]},
+       o:["確定（出生證明上的）","大概，可能差一小時","完全不確定"],ex:"確定（出生證明上的）"},
+      {k:"known",l:"你已經知道的命盤資訊",t:"text",sec:"bg",
+       when:{k:"system",in:["紫微斗數","八字","西洋占星","人類圖","生命靈數","綜合參考"]},
+       ph:"例：太陽金牛、月亮天蠍；或命宮主星；沒有就留白"}]},
+  {t:"解讀範圍", why:"不框範圍會拿到一大篇廢話",
+   f:[{k:"focus",l:"想看哪些面向（可複選）",t:"chips",multi:1,sec:"detail",
+       o:["事業工作","感情關係","財務金錢","健康作息","學業考試","家庭","自我性格","整體運勢"],ex:"事業工作"},
+      {k:"period",l:"時間範圍",t:"text",sec:"detail",ph:"未來三個月／2026 下半年／這一年",ex:"未來六個月"},
+      {k:"depth",l:"專業術語的處理",t:"chips",sec:"out",
+       o:["白話為主，術語能免則免","可以用術語但要附解釋","直接用專業術語，我看得懂"],ex:"可以用術語但要附解釋"}]},
+  {t:"界線與語氣", why:"先講清楚就不會被嚇到",
+   f:[{k:"avoid",l:"請避免（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["不要斷生死疾病","不要給投資買賣決定","不要用「一定會」這種說法","不要恐嚇式的話術","不用安慰我，可以直說"],
+       ex:"不要用「一定會」這種說法"},
+      {k:"tone",l:"語氣偏好",t:"text",sec:"limit",ph:"溫和陪伴／直接犀利／像朋友聊天",ex:"直接一點，但不要說教"},
+      {k:"outForm",l:"呈現方式",t:"chips",sec:"out",
+       o:["先結論再細節","逐項條列","一段一段說明","表格整理"],ex:"先結論再細節"}]}],
+ flow:["先重述你理解的問題與我給的資料；若出生時間、牌面或背景不足，先問我不要自己補",
+       "說明你這次會怎麼看（用哪個系統、看哪幾個位置），讓我知道結論從哪來",
+       "先客觀列出盤面／牌面的資訊，這一步不要解讀",
+       "再逐項解讀，每個結論都標出根據哪張牌、哪個宮位或哪個十神",
+       "最後給 2-3 件我這個月做得到的具體行動，和一個要留意的點"],
+ check:["每個結論都指得出根據，不是空泛的形容","術語有照我要求的程度處理","沒有絕對斷言，有講出在什麼條件下會怎樣","結尾是可以行動的建議，不是只有吉凶"]
+},
+{
+ id:"travel", n:"旅遊 / 行程規劃", d:"天數、路線、預算、逐日安排",
+ role:"資深旅遊規劃師，熟悉實際交通接駁與體力分配，不排出走不完的行程",
+ steps:[
+  {t:"基本盤", why:"天數和季節決定一切",
+   f:[{k:"dest",l:"去哪裡",t:"text",sec:"goal",ph:"國家／城市，有想到的區域也寫上",ex:"日本京都＋大阪"},
+      {k:"days",l:"天數與日期",t:"text",sec:"goal",ph:"含不含來回機票日、什麼季節",ex:"6天5夜，2026/11/12-17，含來回機票日"}]},
+  {t:"同行與預算", why:"體力和錢決定行程密度",
+   f:[{k:"who",l:"幾個人、什麼組合",t:"text",sec:"bg",ph:"年齡、體力、有沒有長輩小孩、走多久會累",ex:"2 大人，30 多歲，一天走 15,000 步還可以"},
+      {k:"budget",l:"預算",t:"text",sec:"limit",ph:"總額或每日、含不含機票住宿、幣別",ex:"不含機票，每人 5 萬台幣內"}]},
+  {t:"節奏與主題", why:"這題不問就會排成趕場",
+   f:[{k:"pace",l:"想要的節奏",t:"chips",sec:"detail",
+       o:["慢慢走，一天 2-3 個點","標準，一天 4 個點","密集走透透","定點深度，少移動"],ex:"標準，一天 4 個點"},
+      {k:"theme",l:"重點（可複選）",t:"chips",multi:1,sec:"detail",
+       o:["美食","自然景觀","歷史文化","購物","親子","攝影","溫泉","咖啡廳","夜生活","在地體驗"],ex:"美食"}]},
+  {t:"必去與地雷", why:"先講才不用改第二輪",
+   f:[{k:"musts",l:"一定要去、一定要吃的",t:"area",sec:"detail",ph:"一行一個，已經訂好的也寫上",
+       ex:"伏見稻荷\n一蘭拉麵\n已訂：11/14 環球影城"},
+      {k:"avoid",l:"不要安排的",t:"text",sec:"limit",ph:"不吃生食、不爬山、不要太早起、不進廟",ex:"不要早於 8 點出門，不爬長階梯"}]},
+  {t:"交通與住宿", why:"移動方式直接改變路線",
+   f:[{k:"move",l:"怎麼移動（可複選）",t:"chips",multi:1,sec:"limit",
+       o:["大眾運輸","自駕","包車","走路為主","計程車無所謂"],ex:"大眾運輸"},
+      {k:"stay",l:"住宿",t:"text",sec:"bg",ph:"訂好了嗎、在哪一區、要不要換飯店",ex:"還沒訂，希望住京都車站附近不換飯店"}]},
+  {t:"產出", why:"你要表格還是清單",
+   f:[{k:"out",l:"這次要給我",t:"chips",multi:1,sec:"out",
+       o:["逐日行程表","行程表＋每日地圖順序","景點推薦清單","預算試算","打包清單","訂票與預約清單"],ex:"逐日行程表"}]}],
+ flow:["先確認天數、預算、同行人與體力上限，有缺的先問我不要自己假設",
+       "依地理位置分區，先告訴我每天大概在哪一區活動，等我確認",
+       "確認後再排逐日行程，每個點標上停留時間、下一段的交通方式與移動時間",
+       "每天標一個「下雨或走不動」的替代方案",
+       "最後列出需要事先預約、要提早買票的項目與建議訂票時間"],
+ check:["每天的移動路線不會來回跑","每個點都有停留時間與交通時間","有預留吃飯與休息，不是滿檔","需要預約的項目有單獨列出來"]
+},
+{
+ id:"learn", n:"學習 / 自學計畫", d:"學習地圖、週計畫、資源、驗收",
+ role:"學習教練，擅長把大目標拆成每週做得完的任務，並設計可以自我檢查的里程碑",
+ steps:[
+  {t:"目標", why:"學來幹嘛決定要學哪些",
+   f:[{k:"subject",l:"想學什麼",t:"text",sec:"goal",ph:"越具體越好",ex:"Python 資料處理"},
+      {k:"why",l:"學來要做什麼",t:"text",sec:"goal",ph:"用在工作？考試？做出某個東西？",ex:"想自己處理公司每月的銷售報表，不用再手動貼 Excel"}]},
+  {t:"起點", why:"不問程度就會從錯的地方開始",
+   f:[{k:"level",l:"目前程度",t:"chips",sec:"bg",
+       o:["完全零基礎","有一點概念，沒實作過","會一些但不成系統","想補特定弱點"],ex:"有一點概念，沒實作過"},
+      {k:"done",l:"已經試過什麼、卡在哪",t:"text",sec:"bg",ph:"看過哪些課、為什麼放棄",ex:"看過線上課前三章，看得懂但自己寫不出來"}]},
+  {t:"時間與期限", why:"計畫要塞得進你的生活",
+   f:[{k:"hours",l:"每週能投入多久",t:"text",sec:"limit",ph:"幾小時、什麼時段、平日還是假日",ex:"平日晚上 3 小時，週末 2 小時"},
+      {k:"deadline",l:"期限",t:"text",sec:"limit",ph:"考試日期、想幾個月內達成",ex:"希望 2 個月內能自己寫出報表腳本"}]},
+  {t:"學習方式", why:"用你受得了的方式才撐得久",
+   f:[{k:"style",l:"偏好（可複選）",t:"chips",multi:1,sec:"detail",
+       o:["看影片","讀文件或書","動手做專案","刷題練習","有人出題考我","邊做邊查"],ex:"動手做專案"},
+      {k:"lang",l:"材料語言與預算",t:"text",sec:"limit",ph:"中文／英文都行、免費為主還是可以付費",ex:"中文優先，免費資源為主"}]},
+  {t:"產出", why:"要計畫表還是要人帶著做",
+   f:[{k:"out",l:"這次要給我",t:"chips",multi:1,sec:"out",
+       o:["每週學習計畫表","主題地圖／大綱","資源清單","練習題","從零帶我做一個專案"],ex:"每週學習計畫表"}]}],
+ flow:["先用幾個問題確認我的真實程度，不要憑我的自述假設",
+       "畫出這個主題的學習地圖：哪些必學、哪些可以先跳過、為什麼",
+       "依我的每週時數排出週計畫，每週要有一個交得出來的小成果",
+       "給每個階段的自我檢查方式：怎麼知道我真的會了",
+       "最後列出常見卡關點，以及卡住時該怎麼判斷是跳過還是硬啃"],
+ check:["每週任務在我說的時數內做得完","每個階段有可以驗證的小成果","有明確標出可以先跳過的部分","推薦的資源現在還找得到、符合我的語言與預算"]
+},
+{
+ id:"life", n:"生活 / 飲食 / 健身", d:"菜單、課表、作息、習慣養成",
+ role:"生活教練與飲食／訓練規劃者，重視可持續、不極端，必要時會提醒我找專業人士",
+ note:["健康相關內容僅供參考，不取代醫師、營養師或教練的專業判斷。",
+       "不要建議極端節食、過度訓練或任何有風險的做法；我有身體狀況時請提醒我先就醫。"],
+ steps:[
+  {t:"目標", why:"先講清楚要的是什麼",
+   f:[{k:"goal",l:"想做什麼",t:"chips",sec:"goal",
+       o:["規劃一週菜單","減脂","增肌","建立運動習慣","調整作息","整理居家","養成新習慣"],ex:"規劃一週菜單"},
+      {k:"want",l:"具體想達成什麼、到什麼時候",t:"text",sec:"goal",ph:"用數字或可觀察的狀態描述",ex:"三個月內每週至少自己煮 4 餐，不用每天想吃什麼"}]},
+  {t:"現況", why:"從你現在的生活出發才做得到",
+   f:[{k:"now",l:"目前的作息／飲食／運動狀況",t:"area",sec:"bg",
+       ph:"幾點起床睡覺、平常吃什麼、有沒有在運動",
+       ex:"上班族，7 點起床 12 點睡；午餐外食、晚餐常叫外送；一週運動 0-1 次"},
+      {k:"limit",l:"身體狀況與限制",t:"text",sec:"limit",ph:"過敏、慢性病、受傷、不能吃的、正在看醫生",ex:"乳糖不耐，左膝舊傷不能深蹲"}]},
+  {t:"條件", why:"沒時間沒設備的計畫等於零",
+   f:[{k:"time",l:"每天能花多少時間",t:"text",sec:"limit",ph:"備餐／運動各多久，哪個時段",ex:"平日晚上 40 分鐘，週日可以備餐 2 小時"},
+      {k:"tools",l:"有什麼設備、預算",t:"text",sec:"limit",ph:"廚具、健身房、器材、每週伙食費",ex:"有電鍋和平底鍋、沒有烤箱；有健身房；伙食費每週 1,500"}]},
+  {t:"偏好與誠實面",why:"先承認做不到，計畫才撐得住",
+   f:[{k:"like",l:"喜歡／討厭的",t:"text",sec:"detail",ph:"愛吃什麼、討厭什麼運動",ex:"不吃香菜和內臟；討厭跑步"},
+      {k:"hard",l:"你自己知道做不到的事",t:"text",sec:"limit",ph:"早起、每天備餐、完全戒某樣東西",ex:"早上絕對爬不起來運動；戒不掉一週一次手搖"}]},
+  {t:"產出", why:"要表格還是要說明",
+   f:[{k:"out",l:"這次要給我",t:"chips",multi:1,sec:"out",
+       o:["一週菜單","訓練課表","每日行程表","習慣追蹤表","購物清單","替代方案清單"],ex:"一週菜單"}]}],
+ flow:["先確認我的限制與做不到的事，把計畫設計在這個範圍內，有疑慮先問我",
+       "提出整體策略與一週的架構，等我確認再展開",
+       "確認後再給細節：菜單、課表或時間表，並標出每項要花多少時間",
+       "每一項都給一個替代方案，讓我做不到時不會整個放棄",
+       "最後給一個「最低限度版本」：做到什麼程度就算沒有中斷"],
+ check:["在我說的時間、預算與設備內做得到","有避開我列出的身體限制與討厭的項目","每項都有替代方案，不是全有全無","沒有極端或有風險的做法"]
+}];
+
+const COMMON={t:"最後：告訴 AI 怎麼跟你講話", why:"這段決定你看不看得懂回覆",
+ f:[{k:"_level",l:"我的熟練度",t:"chips",sec:"meta",o:["新手，請解釋專有名詞","中等，重點講清楚就好","熟手，直接給結論與程式"],ex:"中等，重點講清楚就好"},
+    {k:"_extra",l:"其他補充",t:"area",sec:"meta",ph:"任何想到的、參考資料、之前失敗過的做法",ex:""}]};
+
+const SEC=[["goal","任務目標"],["bg","背景與現況"],["detail","需求細節"],["limit","限制與規範"],["out","輸出與交付"]];
+
+/* 建議的 AI（2026/09 的公開評比與各家官方說法，會變動） */
+const AI={
+ copy:{l:[
+   {n:"Claude",t:"首選",w:"中文語感與改稿最穩，長文一次到位。免費的 Sonnet 5 就夠寫貼文"},
+   {n:"ChatGPT",t:"也可以",w:"要一次生很多版本、快速發散想法時好用"},
+   {n:"Gemini",t:"免費",w:"要查競品現況、即時活動資訊時選它，搜尋整合最好"}],
+   note:"文案類最忌諱一次要十版。照左邊的執行順序，先讓它給 3 個方向你挑一個，成品品質差很多。"},
+ web:{l:[
+   {n:"Claude",t:"首選",w:"單一 HTML 的工具、轉檔器、工作台，直接給你打得開的檔案"},
+   {n:"Cursor / Claude Code",t:"改專案用",w:"要動你自己既有的程式碼，用能讀寫檔案的工具才不會來回貼"},
+   {n:"ChatGPT / Gemini",t:"也可以",w:"小工具、單檔腳本同樣做得到"}],
+   note:"如果是要改你電腦裡現有的專案，別用純聊天視窗貼來貼去，換到 Cursor 或 Claude Code 這種能直接讀檔改檔的。"},
+ app:{l:[
+   {n:"Claude / ChatGPT",t:"規格階段",w:"需求書、流程、MVP 拆解，在聊天視窗討論最快"},
+   {n:"Cursor / Claude Code",t:"實作階段",w:"真的要寫出來時再換過去，把規格貼進去當起點"},
+   {n:"Gemini",t:"免費",w:"1M 上下文，適合一次讀完你既有的文件再出規格"}],
+   note:"規格和實作分兩個工具做。先在聊天視窗把「這版不做什麼」談定，再進編輯器，可以少掉大量重寫。"},
+ data:{l:[
+   {n:"ChatGPT",t:"首選",w:"上傳檔案後會實際跑 Python 算，不是用猜的"},
+   {n:"Claude",t:"也可以",w:"長報表、要解釋口徑與寫結論時較強"},
+   {n:"Gemini",t:"Google 生態",w:"資料在 Google 試算表或雲端硬碟時最順"}],
+   note:"關鍵是要它「實際運算」而不是「估計」。看到沒有計算過程就直接給數字的回覆，要求它列出算式重算一次。"},
+ visual:{l:[
+   {n:"ChatGPT（GPT Image）",t:"首選",w:"聽得懂自然語言，圖上要放中文字時表現最好"},
+   {n:"Gemini（Nano Banana Pro）",t:"修圖",w:"高解析度、局部修改與去背這類編輯最強"},
+   {n:"Midjourney",t:"美感優先",w:"風格一致、藝術感最好，但吃的是關鍵字式描述"},
+   {n:"Sora / Veo / 可靈",t:"影片",w:"文字轉影片；先用聊天 AI 寫好分鏡再丟過去"}],
+   note:"重要：丟給 Midjourney、FLUX 這類純生圖工具時，不要貼左邊這種分段指令。先請聊天 AI「把以下需求改寫成 Midjourney 用的英文描述串」，再把結果貼過去。"},
+ auto:{l:[
+   {n:"Claude Code / Cursor",t:"首選",w:"能直接在你電腦上跑、看到錯誤再自己修，最省事"},
+   {n:"ChatGPT",t:"也可以",w:"單檔腳本可以線上測試後再給你"},
+   {n:"Gemini",t:"Google 自動化",w:"要寫 Google Apps Script、串試算表與 Gmail 時選它"}],
+   note:"不管用哪個，第一輪一定要求「先用複製檔試跑」。自動化出錯的代價是檔案，不是時間。"},
+ game:{l:[
+   {n:"Claude",t:"首選",w:"單檔網頁小遊戲一次生成的完成度高，能直接玩"},
+   {n:"ChatGPT / Gemini",t:"也可以",w:"玩法發想、關卡數值調整同樣可以"},
+   {n:"Cursor / Claude Code",t:"做大一點",w:"超過一個檔案、要持續改版時換過去"}],
+   note:"先要它做出「能玩的核心循環」再加美術和音效。一次要求全部，通常會拿到一個打不開的檔案。"},
+ fate:{l:[
+   {n:"Claude",t:"首選",w:"長篇解讀的邏輯一致性較好，會標出結論根據哪個符號"},
+   {n:"ChatGPT",t:"也可以",w:"想一來一往追問、邊聊邊釐清時順手"},
+   {n:"專門排盤工具",t:"注意",w:"八字、紫微、星盤請先用排盤網站或 App 排好，再把盤面貼給 AI"}],
+   note:"AI 換算農曆、節氣與時區常出錯，排錯盤後面全錯。排盤交給專門工具，AI 負責解讀。解讀出來的內容當作思考素材，不是判決書。"},
+ travel:{l:[
+   {n:"Gemini",t:"首選",w:"Google 地圖與搜尋整合最好，查營業時間、交通較準"},
+   {n:"ChatGPT",t:"也可以",w:"開搜尋模式查票價與最新資訊，行程編排也順"},
+   {n:"Claude",t:"整理用",w:"把查到的資料整理成逐日表格、預算試算很強"}],
+   note:"營業時間、票價、公休日一定要它附上來源連結，並自己再確認一次。這類資訊 AI 最容易給到過期的。"},
+ learn:{l:[
+   {n:"Claude",t:"首選",w:"拆解學習路徑、出練習題、一步步帶你做專案"},
+   {n:"ChatGPT",t:"也可以",w:"要它當老師反覆考你、糾正你的理解"},
+   {n:"Gemini",t:"找資源",w:"要現在還存在的課程、文件連結時用有搜尋的"}],
+   note:"要資源連結時，務必要求附上來源網址。AI 很會編出看起來很像真的、但不存在的書名和課程。"},
+ life:{l:[
+   {n:"Claude / ChatGPT",t:"都可以",w:"菜單、課表、作息規劃這類，兩邊差異不大"},
+   {n:"Gemini",t:"查資料",w:"要查營養成分、特定食材資訊時選有搜尋的"}],
+   note:"健康相關的建議請當參考。有身體狀況、在服藥或要大幅改變飲食運動，先問醫師或營養師。"}
+};
+
+let cur=null, val={}, demo=false, lastPrompt="";
+const $=id=>document.getElementById(id);
+
+/* ---- 暫存（只存在這台裝置的瀏覽器） ---- */
+const KEY="pf-draft-v2";
+let store={cur:null,data:{}};
+try{const raw=localStorage.getItem(KEY); if(raw){const o=JSON.parse(raw); if(o&&o.data)store=o;}}catch(e){}
+let saveT=null;
+function save(){
+  if(!cur)return;
+  store.cur=cur.id;
+  const keep={}; let any=false;
+  Object.keys(val).forEach(k=>{const x=val[k];
+    if(x&&(!Array.isArray(x)||x.length)){keep[k]=x;any=true;}});
+  if(any)store.data[cur.id]=keep; else delete store.data[cur.id];
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(store));
+      const d=new Date();
+      $("savedtxt").textContent="已暫存於這台裝置 "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+"（換分頁或關掉都還在，清除瀏覽器資料才會消失）";
+    }catch(e){ $("savedtxt").textContent="這個瀏覽器不允許暫存，關掉頁面內容會消失"; }
+  },400);
+}
+
+/* theme */
+(function(){
+  let t=null; try{t=localStorage.getItem("pf-theme")}catch(e){}
+  if(t)document.documentElement.setAttribute("data-theme",t);
+  const b=$("themebtn");
+  const lbl=()=>{const d=document.documentElement.getAttribute("data-theme");
+    b.textContent=d==="dark"?"切換淺色":"切換深色";};
+  lbl();
+  b.addEventListener("click",()=>{
+    const d=document.documentElement.getAttribute("data-theme");
+    const cs=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const next=d?(d==="dark"?"light":"dark"):(cs?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next);
+    try{localStorage.setItem("pf-theme",next)}catch(e){}
+    lbl();
+  });
+})();
+
+/* category tiles, grouped */
+const GROUPS=[
+  {g:"工作",ids:["copy","web","app","data","visual","auto"]},
+  {g:"興趣",ids:["game","fate","travel"]},
+  {g:"學習",ids:["learn","life"]}
+];
+const catsEl=$("cats");
+const tiles={};
+GROUPS.forEach(gp=>{
+  const row=document.createElement("div"); row.className="group";
+  const lb=document.createElement("div"); lb.className="glabel"; lb.textContent=gp.g;
+  const grid=document.createElement("div"); grid.className="cats";
+  gp.ids.forEach(id=>{
+    const c=CATS.find(x=>x.id===id); if(!c)return;
+    const b=document.createElement("button");
+    b.type="button";b.className="cat";b.setAttribute("aria-pressed","false");b.dataset.id=c.id;
+    b.innerHTML='<span class="n"></span><span class="d"></span>';
+    b.querySelector(".n").textContent=c.n; b.querySelector(".d").textContent=c.d;
+    b.addEventListener("click",()=>select(c.id,false));
+    grid.appendChild(b); tiles[c.id]=b;
+  });
+  row.appendChild(lb); row.appendChild(grid); catsEl.appendChild(row);
+});
+
+function allSteps(c){return c.steps.concat([COMMON]);}
+function vis(f){
+  if(!f.when)return true;
+  const x=val[f.when.k];
+  if(!x)return false;
+  return f.when.in.indexOf(Array.isArray(x)?x[0]:x)>-1;
+}
+function liveSteps(c){
+  return allSteps(c).map(s=>({t:s.t,why:s.why,f:s.f.filter(vis)})).filter(s=>s.f.length);
+}
+
+function select(id,withDemo){
+  cur=CATS.find(c=>c.id===id); val={}; demo=false;
+  const kept=store.data[id];
+  if(kept&&Object.keys(kept).length){
+    Object.keys(kept).forEach(k=>{val[k]=Array.isArray(kept[k])?kept[k].slice():kept[k];});
+  }else if(withDemo){
+    demo=true;
+    allSteps(cur).forEach(s=>s.f.forEach(f=>{ if(f.ex) val[f.k]= f.multi?[f.ex]:f.ex; }));
+  }
+  Object.keys(tiles).forEach(k=>tiles[k].setAttribute("aria-pressed",String(k===id)));
+  render();
+}
+
+function touch(){ if(demo){ demo=false; $("banner").innerHTML=""; } }
+
+function render(){
+  const c=cur;
+  $("polish").hidden=true;
+  $("formtitle").textContent=c.n;
+  $("formsub").textContent="共 "+liveSteps(c).length+" 步，空白的欄位會自動略過";
+  /* banner */
+  const bn=$("banner"); bn.innerHTML="";
+  if(demo){
+    const d=document.createElement("div"); d.className="banner";
+    d.innerHTML='<span>目前填的是示範內容，讓你看得出來成品長怎樣。</span>';
+    const btn=document.createElement("button"); btn.type="button"; btn.textContent="清空，換我填";
+    btn.addEventListener("click",()=>{demo=false;val={};render();});
+    d.appendChild(btn); bn.appendChild(d);
+  }
+  /* steps */
+  const wrap=$("steps"); wrap.innerHTML="";
+  liveSteps(c).forEach((s,i)=>{
+    const st=document.createElement("div"); st.className="step";
+    const hd=document.createElement("div"); hd.className="step-hd";
+    hd.innerHTML='<span class="num"></span><div><h3></h3></div>';
+    hd.querySelector(".num").textContent=i+1;
+    hd.querySelector("h3").textContent=s.t;
+    if(s.why){const w=document.createElement("span");w.className="why";w.textContent="　"+s.why;hd.querySelector("h3").appendChild(w);}
+    st.appendChild(hd);
+    s.f.forEach(f=>st.appendChild(field(f)));
+    wrap.appendChild(st);
+  });
+  /* AI 建議 */
+  const a=AI[c.id];
+  $("aibox").hidden=!a;
+  if(a){
+    const row=$("airow"); row.innerHTML="";
+    a.l.forEach(x=>{
+      const d=document.createElement("div"); d.className="aicard";
+      const t=document.createElement("div"); t.className="t";
+      const nm=document.createElement("span"); nm.className="nm"; nm.textContent=x.n;
+      const p=document.createElement("span");
+      p.className="pill"+(x.t==="首選"?"":(/免費|Google|注意/.test(x.t)?" free":" alt"));
+      p.textContent=x.t;
+      t.appendChild(nm); t.appendChild(p);
+      const w=document.createElement("div"); w.className="w"; w.textContent=x.w;
+      d.appendChild(t); d.appendChild(w); row.appendChild(d);
+    });
+    const nb=$("ainote"); nb.innerHTML="";
+    if(a.note){const n=document.createElement("div");n.className="ainote";n.textContent=a.note;nb.appendChild(n);}
+  }
+  /* flow */
+  $("flowbox").hidden=false;
+  const fl=$("flowlist"); fl.innerHTML="";
+  c.flow.forEach(x=>{const li=document.createElement("li");li.textContent=x;fl.appendChild(li);});
+  build();
+}
+
+function field(f){
+  const d=document.createElement("div"); d.className="f";
+  const lab=document.createElement("label");
+  lab.textContent=f.l; lab.htmlFor="fld-"+f.k;
+  if(f.multi){const h=document.createElement("span");h.className="hint";h.textContent="可複選";lab.appendChild(h);}
+  d.appendChild(lab);
+  if(f.t==="chips"){
+    const box=document.createElement("div"); box.className="chips"; box.id="fld-"+f.k;
+    f.o.forEach(o=>{
+      const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=o;
+      const on=f.multi?(val[f.k]||[]).indexOf(o)>-1:val[f.k]===o;
+      b.setAttribute("aria-pressed",String(on));
+      b.addEventListener("click",()=>{
+        if(f.multi){
+          const a=val[f.k]||[]; const i=a.indexOf(o);
+          if(i>-1)a.splice(i,1); else a.push(o);
+          val[f.k]=a;
+          b.setAttribute("aria-pressed",String(a.indexOf(o)>-1));
+        }else{
+          val[f.k]= val[f.k]===o? "": o;
+          [...box.children].forEach(x=>x.setAttribute("aria-pressed",String(x.textContent===val[f.k])));
+        }
+        touch(); if(f.gate)render(); else build();
+      });
+      box.appendChild(b);
+    });
+    d.appendChild(box);
+  }else{
+    const el=document.createElement(f.t==="area"?"textarea":"input");
+    if(f.t!=="area")el.type="text";
+    el.id="fld-"+f.k; el.placeholder=f.ph||""; el.value=val[f.k]||"";
+    if(f.t==="area")el.rows=(f.ex&&f.ex.indexOf("\n")>-1)?4:3;
+    el.addEventListener("input",()=>{val[f.k]=el.value;touch();build();});
+    d.appendChild(el);
+  }
+  return d;
+}
+
+function v(f){
+  const x=val[f.k];
+  if(!x)return "";
+  if(Array.isArray(x))return x.length?x.join("、"):"";
+  return String(x).trim();
+}
+
+function build(){
+  const c=cur; if(!c)return;
+  const bucket={goal:[],bg:[],detail:[],limit:[],out:[]};
+  let filled=0,total=0;
+  liveSteps(c).forEach(s=>s.f.forEach(f=>{
+    total++; const x=v(f); if(!x)return; filled++;
+    if(f.sec==="meta")return;
+    bucket[f.sec].push([f.l,x]);
+  }));
+  const L=[];
+  L.push("# 角色");
+  L.push("你是一位"+c.role+"。");
+  L.push("");
+  if(c.note&&c.note.length){
+    L.push("# 前提與界線");
+    c.note.forEach(x=>L.push("- "+x));
+    L.push("");
+  }
+  SEC.forEach(([k,name])=>{
+    if(!bucket[k].length)return;
+    L.push("# "+name);
+    bucket[k].forEach(([l,x])=>{
+      if(x.indexOf("\n")>-1){
+        L.push("- "+l+"：");
+        x.split("\n").forEach(line=>{if(line.trim())L.push("  - "+line.trim());});
+      }else L.push("- "+l+"："+x);
+    });
+    L.push("");
+  });
+  L.push("# 執行順序");
+  L.push("請嚴格照這個順序進行，每做完一步先停下來給我確認，不要一次做完全部：");
+  c.flow.forEach((x,i)=>L.push((i+1)+". "+x));
+  L.push("");
+  L.push("# 驗收標準");
+  L.push("做完請自己對照這幾點檢查，並逐條回報有沒有達到：");
+  c.check.forEach(x=>L.push("- "+x));
+  L.push("");
+  const lv=val._level, ex=(val._extra||"").trim();
+  if(lv||ex){
+    L.push("# 溝通方式");
+    if(lv)L.push("- 我的程度："+lv);
+    if(ex)ex.split("\n").forEach(line=>{if(line.trim())L.push("- "+line.trim());});
+    L.push("");
+  }
+  L.push("# 如果資訊不足");
+  L.push("不要自行假設，也不要直接開工。請先一次列出所有需要我補充的問題，等我回答後再開始第一步。");
+
+  const txt=L.join("\n");
+  lastPrompt=txt;
+  $("out").textContent=txt;
+  if(!demo)save();
+  $("count").textContent=filled+"/"+total+" 欄 · "+txt.length+" 字";
+  const m=$("miss");
+  if(filled<Math.min(4,total)){m.hidden=false;m.textContent="欄位還很空，先填「任務目標」和「背景」兩段，指令的品質差最多。";}
+  else m.hidden=true;
+}
+
+$("copy").addEventListener("click",async()=>{
+  const b=$("copy"), t=$("out").textContent;
+  try{ await navigator.clipboard.writeText(t); b.textContent="已複製"; }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");b.textContent="已複製";}catch(e2){b.textContent="請手動選取複製";}
+    document.body.removeChild(ta);
+  }
+  setTimeout(()=>{b.textContent="複製指令";},1600);
+});
+$("clear").addEventListener("click",()=>{
+  if(!cur)return;
+  delete store.data[cur.id];
+  try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}
+  demo=false; val={}; $("polish").hidden=true;
+  $("savedtxt").textContent="已清空，重新填的內容會自動暫存";
+  render(); window.scrollTo({top:0,behavior:"smooth"});
+});
+
+/* ---- 請 Claude 潤飾 ---- */
+let sampleFn=null, ctl=null;
+const ERRMSG={
+  rate_limited:"太頻繁或用量到上限了，等一下再試。",
+  session_expired:"登入過期了，重新登入 Claude 再試一次。",
+  refused:"Claude 不處理這段內容，改一下再試。",
+  empty_completion:"沒有回覆內容，把指令縮短一點再試。",
+  invalid_json:"回覆格式不對，再試一次。",
+  prompt_too_large:"指令太長了，先刪掉一些內容再潤飾。",
+  upstream_error:"連線出了點問題，再按一次試試。"
+};
+const HIDE=["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"];
+
+(async()=>{
+  try{ sampleFn = await (window.claude && window.claude.use ? window.claude.use("sample") : null); }
+  catch(e){ sampleFn=null; }
+  if(sampleFn)$("polishBtn").hidden=false;
+})();
+
+function polishPrompt(txt){
+  return "你是提示詞（prompt）優化專家。以下是使用者用一個表單工具組出來的「AI 指令草稿」。\n\n"+
+  "請只輸出下面這兩段，不要有任何開場白或結語：\n\n"+
+  "【潤飾後的指令】\n"+
+  "把草稿改寫得更清楚、更不容易被誤解。保留原本的段落結構，以及「執行順序」與「驗收標準」這兩段的精神。"+
+  "可以合併重複的內容、把模糊的形容詞換成具體描述、補上明顯遺漏的限制。"+
+  "絕對不要虛構使用者沒提供的事實（數字、品牌、日期都不可以自己編）——需要補的資訊改寫成問句，放到下一段。\n\n"+
+  "【還缺什麼】\n"+
+  "列出 3-5 點：這份指令裡資訊不足、或可能讓 AI 會錯意的地方，以及建議再補充什麼。每點一行、用「- 」開頭、講白話。\n\n"+
+  "請全程使用繁體中文（台灣用語）。\n\n指令草稿如下：\n---\n"+txt;
+}
+
+$("polishBtn").addEventListener("click",async()=>{
+  if(!sampleFn||!lastPrompt)return;
+  const b=$("polishBtn"), out=$("pout");
+  $("polish").hidden=false; $("pstop").hidden=false; b.disabled=true; b.textContent="潤飾中…";
+  out.className="pout think"; out.textContent="Claude 思考中…（第一次會問你要不要允許，通常 10-60 秒）";
+  ctl=new AbortController();
+  try{
+    const r=await sampleFn(polishPrompt(lastPrompt),{
+      signal:ctl.signal, modelTier:"default",
+      onText:({text})=>{ out.className="pout"; out.textContent=text; }
+    });
+    out.className="pout"; out.textContent=r.text;
+    if(r.truncated)out.textContent+="\n\n（回覆被截斷了，指令太長，可以刪掉一些欄位再試）";
+  }catch(e){
+    const code=(e&&e.code)||"upstream_error";
+    if(code==="cancelled"){ out.className="pout"; out.textContent=e.text||"已停止。"; }
+    else if(HIDE.indexOf(code)>-1){ $("polish").hidden=true; b.hidden=true; }
+    else { out.className="pout"; out.textContent=(e.text?e.text+"\n\n———\n":"")+(ERRMSG[code]||ERRMSG.upstream_error); }
+  }finally{
+    $("pstop").hidden=true; b.disabled=false; b.textContent="請 Claude 潤飾"; ctl=null;
+  }
+});
+$("pstop").addEventListener("click",()=>{ if(ctl)ctl.abort(); });
+$("pclose").addEventListener("click",()=>{ $("polish").hidden=true; });
+$("pcopy").addEventListener("click",async()=>{
+  const b=$("pcopy");
+  try{ await navigator.clipboard.writeText($("pout").textContent); b.textContent="已複製"; }
+  catch(e){ b.textContent="請手動選取複製"; }
+  setTimeout(()=>{b.textContent="複製潤飾版";},1600);
+});
+
+if(store.cur&&CATS.some(c=>c.id===store.cur))select(store.cur,false);
+else select("copy",true);
+</script>
+</body>
+</html>
