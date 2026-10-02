@@ -90,6 +90,10 @@ header.top{display:flex;gap:16px;align-items:flex-start;justify-content:space-be
 .pill.alt{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .pill.free{background:var(--signal-soft);color:var(--signal)}
 .aicard .w{font-size:12.5px;color:var(--muted);line-height:1.55}
+.defbox{margin-top:8px;border:1px solid var(--line);border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 7px 7px 0;padding:9px 12px}
+.defbox p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink)}
+.defbox p.keys{margin-top:5px;color:var(--accent);font-weight:500}
 .ainote{margin-top:11px;font-size:12.5px;color:var(--ink);background:var(--signal-soft);
   border-left:3px solid var(--signal);border-radius:0 6px 6px 0;padding:8px 12px;line-height:1.6}
 .cat{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -328,8 +332,8 @@ const CATS=[
  role:"網頁遊戲開發者兼關卡設計師，重視手感與第一分鐘的體驗",
  steps:[
   {t:"類型與核心", why:"一句話講不清楚就還沒想好",
-   f:[{k:"genre",l:"遊戲類型",t:"chips",sec:"goal",
-       o:["益智解謎","跑酷閃避","射擊","卡牌","文字冒險","記憶配對","塔防","放置掛機","節奏"],ex:"益智解謎"},
+   f:[{k:"genre",l:"經典玩法模式",t:"chips",sec:"goal",gate:1,defs:1,
+       o:[],ex:"消除配對 Match-3"},
       {k:"core",l:"核心玩法一句話",t:"text",sec:"goal",
        ph:"玩家要做什麼、為什麼好玩",ex:"把掉下來的方塊配對消除，消得越快分數倍率越高"}]},
   {t:"操作與規則", why:"手感問題八成出在這",
@@ -621,8 +625,92 @@ const CATS=[
  check:["在我說的時間、預算與設備內做得到","有避開我列出的身體限制與討厭的項目","每項都有替代方案，不是全有全無","沒有極端或有風險的做法"]
 }];
 
-const COMMON={t:"最後：告訴 AI 怎麼跟你講話", why:"這段決定你看不看得懂回覆",
- f:[{k:"_level",l:"我的熟練度",t:"chips",sec:"meta",o:["新手，請解釋專有名詞","中等，重點講清楚就好","熟手，直接給結論與程式"],ex:"中等，重點講清楚就好"},
+/* 各類別可選的專業職務：先定義身分，AI 的預設知識與用語會跟著換 */
+const ROLES={
+ copy:["社群小編","品牌行銷經理","廣告文案","內容行銷企劃","活動企劃","電商營運","公關專員","SEO 內容編輯"],
+ web:["前端工程師","全端工程師","UI/UX 設計師","產品經理","網頁設計師","資料工程師","自動化顧問"],
+ app:["產品經理","行動端工程師","全端工程師","UI/UX 設計師","技術主管","新創共同創辦人"],
+ data:["資料分析師","商業分析師（BI）","財務分析師","資料科學家","營運分析師","市場研究員"],
+ visual:["視覺設計師","藝術指導（AD）","攝影指導","影片導演","分鏡師","品牌設計師","簡報設計師"],
+ auto:["自動化工程師","Python 工程師","IT 支援","流程顧問","資料工程師","RPA 顧問"],
+ game:["關卡企劃","系統／數值企劃","遊戲程式設計師","玩法設計師","遊戲美術","獨立遊戲開發者"],
+ fate:["塔羅師","八字命理師","紫微斗數老師","占星師","易經老師","身心靈諮詢師"],
+ travel:["旅遊規劃師","在地導遊","資深背包客","親子旅遊顧問","商務差旅助理"],
+ learn:["學習教練","一對一家教","課程設計師","考試輔導老師","技能導師"],
+ life:["營養師","健身教練","生活教練","習慣養成教練","料理研究者"]
+};
+
+/* 經典遊戲模式：每一種都附精確定義與必須講清楚的參數 */
+const GAMES={
+ "消除配對 Match-3":{d:"交換相鄰兩格，湊成三個以上同色連線即消除，上方元素掉落補位，可能觸發連鎖。",
+   k:["盤面尺寸","元素種類數","交換不成立時是否復原","連鎖加成規則","限制方式（步數或時間）","特殊／道具元素"]},
+ "轉珠（龍族拼圖式）":{d:"按住一顆珠子在盤面上拖曳，經過的珠子依序與它交換位置，放手或時間到才一次結算，可同時成立多組消除並連鎖。",
+   k:["盤面尺寸","珠子屬性數","可轉動秒數","Combo 計算方式","消除後補位是否再連鎖","傷害或分數公式"]},
+ "方塊堆疊（俄羅斯方塊式）":{d:"不同形狀的方塊依序落下，可左右移動與旋轉，整列填滿即消除，未消除會往上堆，堆到頂端結束。",
+   k:["盤面寬高","方塊種類","下落速度曲線","旋轉規則與貼牆處理","預覽數量","是否可暫存（Hold）","一次消多列的加分"]},
+ "合成數字（2048 式）":{d:"方向鍵推動全盤格子，相同數字相撞合併成兩倍，每步在空格隨機生成新格子，無法移動即結束。",
+   k:["盤面大小","新格子的數值與機率","勝利目標數字","達標後可否繼續","是否可復原"]},
+ "打磚塊 Breakout":{d:"底部擋板反彈球，球擊中上方磚塊將其消除，球掉出底部即失敗。",
+   k:["磚塊佈局與耐久","球速與加速時機","擊球點是否影響反彈角度","道具種類","生命數"]},
+ "彈幕射擊":{d:"操控機體在大量彈幕中閃避並射擊敵人，機體的判定點通常遠小於外觀。",
+   k:["判定點大小","彈幕生成模式","一擊死或血量制","Boss 階段變化","自機火力與強化"]},
+ "平台跳躍":{d:"控制角色在平台之間移動與跳躍，處理重力、碰撞與掉落死亡。",
+   k:["重力與跳躍高度","是否二段跳","碰撞判定方式","關卡長度與重生點","敵人或陷阱"]},
+ "無盡跑酷":{d:"角色自動前進，玩家只負責跳躍或滑行閃避障礙，速度隨時間遞增，分數通常等於距離。",
+   k:["障礙生成規則與最小間距","速度曲線","操作鍵數量","分數計算","復活機制"]},
+ "貪吃蛇":{d:"操控不斷前進的蛇吃食物並變長，撞牆或撞到自己即結束。",
+   k:["格子數","移動間隔（速度）","是否可穿牆","吃到後是否加速","食物生成規則"]},
+ "推箱子 Sokoban":{d:"把箱子推到指定位置，只能推不能拉，推錯可能卡死需要重來。",
+   k:["關卡佈局","步數限制","是否可復原（Undo）","卡死偵測","關卡數與難度遞增"]},
+ "記憶翻牌":{d:"翻開兩張牌比對，相同則保留、不同則蓋回，全部配對完成即過關。",
+   k:["牌組對數","不同時的顯示秒數","計步或計時","難度遞增方式","是否有干擾機制"]},
+ "邏輯填空（數獨式）":{d:"依既定規則在格子中填入數字或符號，不得違反任何約束條件。",
+   k:["盤面與規則","題目產生方式與是否保證唯一解","提示次數","錯誤即時提示或最後才檢查","難度分級"]},
+ "節奏音樂":{d:"音符依節拍落下，玩家在判定線按下對應按鍵，依時間差給 Perfect／Good／Miss。",
+   k:["歌曲與 BPM","軌道數","各判定的毫秒窗口","連擊與分數公式","譜面怎麼來"]},
+ "問答猜謎":{d:"出題後玩家在選項或輸入框中作答，依正確與速度計分。",
+   k:["題庫來源與題數","每題秒數","答錯的處理","是否隨機出題與不重複","結算方式"]},
+ "文字冒險／視覺小說":{d:"以文字敘事推進，玩家在分支選項中做選擇，影響後續走向與結局。",
+   k:["故事主軸與篇幅","分支數與收束方式","結局數量","是否有隱藏數值（好感度等）","存檔點"]},
+ "角色扮演 RPG":{d:"角色具備屬性與等級，透過戰鬥取得經驗與裝備，在地圖上推進劇情。",
+   k:["戰鬥制（回合或即時）","屬性與升級公式","敵人配置與難度曲線","裝備與道具系統","存檔方式"]},
+ "卡牌對戰／牌組構築":{d:"雙方從牌庫抽牌出牌，消耗資源發動效果，牌組組成決定策略。",
+   k:["資源（費用）系統","手牌上限與抽牌規則","勝利條件","卡牌數量與效果類型","對手 AI 強度"]},
+ "塔防":{d:"在路徑旁建造防禦塔阻擋一波波敵人，擊殺取得資源用於升級與擴建。",
+   k:["地圖路徑","塔的種類與升級樹","敵人波次與屬性","經濟平衡（收入與成本）","漏怪的懲罰"]},
+ "放置養成（Idle）":{d:"資源隨時間自動累積，玩家購買升級提升產出，離線期間也會成長。",
+   k:["產出公式與成長曲線","升級價格遞增方式","是否有重置／轉生","離線收益計算","數值上限處理"]},
+ "經營模擬（Tycoon）":{d:"管理資源與設施，在收支平衡中逐步擴張事業。",
+   k:["資源種類","時間推進單位（日／回合）","建設成本與回收期","隨機事件","破產或失敗條件"]}
+};
+
+/* 交付的檔案形式：選了就把對應規則寫進指令 */
+const FORMATS=[
+ {n:"只要討論，先不要做",note:"這一輪只做討論與規劃，不要產生任何檔案或程式碼。"},
+ {n:"畫面假樣（不寫程式）",note:"這一輪不要寫任何程式碼。用條列或 ASCII 框線描述每個畫面的區塊、元素與狀態，讓我先確認結構再決定要不要實作。"},
+ {n:"可直接打開的網頁檔",note:"輸出一個自給自足的 HTML 檔，CSS 與 JavaScript 都內嵌在同一個檔案裡，不依賴外部套件。"},
+ {n:"完整程式碼",note:"給可執行的完整程式碼，並說明檔案結構、相依套件與執行方式。"},
+ {n:"簡報 / 投影片",note:"以投影片為單位輸出：每頁給標題、3-5 個要點與講稿備註。若你的環境能產生 .pptx 檔就直接給檔案。"},
+ {n:"Word 文件",note:"以正式文件結構輸出（標題階層、段落、必要的表格）。若你的環境能產生 .docx 檔就直接給檔案，不能的話給我可直接貼進 Word 的內容。"},
+ {n:"Excel / 試算表",note:"以表格輸出，並說明每個欄位的意義與需要的公式。若你的環境能產生 .xlsx 檔就直接給檔案。"},
+ {n:"Markdown 檔",note:"以 Markdown 輸出，標題階層清楚，可直接存成 .md 檔。"},
+ {n:"圖片",note:"輸出圖片檔，並在旁邊說明尺寸與使用方式。"},
+ {n:"PDF",note:"輸出可直接列印的 PDF；若無法產生檔案，請給排版好的內容與轉檔步驟。"}
+];
+
+/* 把玩法清單灌進遊戲類別（GAMES 定義在 CATS 之後，所以在這裡補上） */
+CATS.forEach(c=>c.steps.forEach(s=>s.f.forEach(f=>{ if(f.k==="genre")f.o=Object.keys(GAMES); })));
+
+function roleStep(c){
+ return {t:"角色設定", why:"先定下用什麼專業看這件事，後面的答案都會不一樣",
+  f:[{k:"_role",l:"請 AI 扮演的職務",t:"chips",sec:"meta",o:ROLES[c.id]||[],ex:(ROLES[c.id]||[])[0]},
+     {k:"_roleNote",l:"這個角色的補充設定",t:"text",sec:"meta",
+      ph:"例：帶過 10 人團隊、專做 B2B、熟悉台灣市場、偏保守",ex:""},
+     {k:"_level",l:"我的熟練度",t:"chips",sec:"meta",
+      o:["新手，請解釋專有名詞","中等，重點講清楚就好","熟手，直接給結論"],ex:"中等，重點講清楚就好"}]};
+}
+const COMMON={t:"交付形式與補充", why:"要檔案還是先討論，差很多",
+ f:[{k:"_fmt",l:"這次要什麼形式的產出",t:"chips",multi:1,sec:"meta",o:FORMATS.map(f=>f.n),ex:""},
     {k:"_extra",l:"其他補充",t:"area",sec:"meta",ph:"任何想到的、參考資料、之前失敗過的做法",ex:""}]};
 
 const SEC=[["goal","任務目標"],["bg","背景與現況"],["detail","需求細節"],["limit","限制與規範"],["out","輸出與交付"]];
@@ -752,7 +840,7 @@ GROUPS.forEach(gp=>{
   row.appendChild(lb); row.appendChild(grid); catsEl.appendChild(row);
 });
 
-function allSteps(c){return c.steps.concat([COMMON]);}
+function allSteps(c){return [roleStep(c)].concat(c.steps,[COMMON]);}
 function vis(f){
   if(!f.when)return true;
   const x=val[f.when.k];
@@ -858,6 +946,14 @@ function field(f){
       box.appendChild(b);
     });
     d.appendChild(box);
+    if(f.defs&&GAMES[val[f.k]]){
+      const g=GAMES[val[f.k]];
+      const nb=document.createElement("div"); nb.className="defbox";
+      const p1=document.createElement("p"); p1.textContent=g.d;
+      const p2=document.createElement("p"); p2.className="keys";
+      p2.textContent="這個玩法一定要講清楚的："+g.k.join("、");
+      nb.appendChild(p1); nb.appendChild(p2); d.appendChild(nb);
+    }
   }else{
     const el=document.createElement(f.t==="area"?"textarea":"input");
     if(f.t!=="area")el.type="text";
@@ -887,17 +983,34 @@ function build(){
   }));
   const L=[];
   L.push("# 角色");
-  L.push("你是一位"+c.role+"。");
+  if(val._role){
+    L.push("你的職務是：資深"+val._role+"。");
+    L.push("你的專業背景："+c.role+"。");
+  }else L.push("你是一位"+c.role+"。");
+  if(val._roleNote)L.push("你的背景設定："+val._roleNote);
   L.push("");
   if(c.note&&c.note.length){
     L.push("# 前提與界線");
     c.note.forEach(x=>L.push("- "+x));
     L.push("");
   }
+  /* 遊戲玩法的精確定義，直接寫進需求細節，避免 AI 自己想像玩法 */
+  const g=GAMES[val.genre];
+  if(g){
+    bucket.detail.unshift(["這個類型必須明確的參數（缺的請先問我，不要自己決定）",g.k.join("、")]);
+    bucket.detail.unshift(["玩法定義（請完全照這個定義實作，不要換成其他玩法）",g.d]);
+  }
+  /* 交付形式 */
+  const fmts=(val._fmt||[]);
+  if(fmts.length){
+    bucket.out.push(["交付形式",fmts.join("、")]);
+    FORMATS.forEach(f=>{ if(fmts.indexOf(f.n)>-1)bucket.out.push(["",f.note]); });
+  }
   SEC.forEach(([k,name])=>{
     if(!bucket[k].length)return;
     L.push("# "+name);
     bucket[k].forEach(([l,x])=>{
+      if(!l){L.push("- "+x);return;}
       if(x.indexOf("\n")>-1){
         L.push("- "+l+"：");
         x.split("\n").forEach(line=>{if(line.trim())L.push("  - "+line.trim());});
@@ -908,6 +1021,8 @@ function build(){
   L.push("# 執行順序");
   L.push("請嚴格照這個順序進行，每做完一步先停下來給我確認，不要一次做完全部：");
   c.flow.forEach((x,i)=>L.push((i+1)+". "+x));
+  if(fmts.indexOf("只要討論，先不要做")>-1||fmts.indexOf("畫面假樣（不寫程式）")>-1)
+    L.push("注意：這一輪的交付形式不需要實作，所以只做到不用寫程式的步驟為止，後面的步驟等我確認後再進行。");
   L.push("");
   L.push("# 驗收標準");
   L.push("做完請自己對照這幾點檢查，並逐條回報有沒有達到：");
