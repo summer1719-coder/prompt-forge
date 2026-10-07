@@ -701,6 +701,24 @@ const FORMATS=[
 /* 把玩法清單灌進遊戲類別（GAMES 定義在 CATS 之後，所以在這裡補上） */
 CATS.forEach(c=>c.steps.forEach(s=>s.f.forEach(f=>{ if(f.k==="genre")f.o=Object.keys(GAMES); })));
 
+/* 思考深度：把方法論翻成模型真的做得到的動作，勾了才寫進指令 */
+const THINK=[
+ {n:"先挑戰我的問題",w:"pre",
+  t:"在動手之前，先用一句話重述你認為我真正要解決的問題。如果你認為我問錯了方向，直接說出來，並提出一個你認為更根本的問題，等我回應再往下。"},
+ {n:"先給我 2-3 個路線",w:"pre",
+  t:"先提出 2-3 個做法明顯不同的路線，各寫一句它的優點與代價，等我選定一個再展開。不要直接給你認為最好的那個解。"},
+ {n:"做完列出你的假設",w:"post",
+  t:"列出你在這個回答裡做了哪些假設，標明哪些來自我提供的資訊、哪些是你自己補的，並指出你最不確定的一個。"},
+ {n:"做完自評",w:"post",
+  t:"用三句話收尾：你最沒把握的地方、你做了哪些取捨、如果重做一次你會改什麼。"},
+ {n:"去掉 AI 腔",w:"limit",
+  t:"不要用「總而言之」「在當今快速變化的時代」這類套話；不要為了排比硬湊成三點；不要在結尾複述開頭；能給具體例子就不要堆形容詞。"}
+];
+function thinkStep(){
+ return {t:"思考深度", why:"勾了才加，簡單任務不用勾",
+  f:[{k:"_think",l:"要 AI 多做哪些動作",t:"chips",multi:1,sec:"meta",o:THINK.map(x=>x.n),ex:""}]};
+}
+
 function roleStep(c){
  return {t:"角色設定", why:"先定下用什麼專業看這件事，後面的答案都會不一樣",
   f:[{k:"_role",l:"請 AI 扮演的職務",t:"chips",sec:"meta",o:ROLES[c.id]||[],ex:(ROLES[c.id]||[])[0]},
@@ -840,7 +858,14 @@ GROUPS.forEach(gp=>{
   row.appendChild(lb); row.appendChild(grid); catsEl.appendChild(row);
 });
 
-function allSteps(c){return [roleStep(c)].concat(c.steps,[COMMON]);}
+function allSteps(c){return [roleStep(c),thinkStep()].concat(c.steps,[COMMON]);}
+function thinkOn(n){return (val._think||[]).indexOf(n)>-1;}
+function flowList(c){
+  const pre=[],post=[];
+  THINK.forEach(x=>{ if(!thinkOn(x.n))return;
+    if(x.w==="pre")pre.push(x.t); else if(x.w==="post")post.push(x.t); });
+  return pre.concat(c.flow,post);
+}
 function vis(f){
   if(!f.when)return true;
   const x=val[f.when.k];
@@ -912,10 +937,7 @@ function render(){
     const nb=$("ainote"); nb.innerHTML="";
     if(a.note){const n=document.createElement("div");n.className="ainote";n.textContent=a.note;nb.appendChild(n);}
   }
-  /* flow */
   $("flowbox").hidden=false;
-  const fl=$("flowlist"); fl.innerHTML="";
-  c.flow.forEach(x=>{const li=document.createElement("li");li.textContent=x;fl.appendChild(li);});
   build();
 }
 
@@ -1000,6 +1022,8 @@ function build(){
     bucket.detail.unshift(["這個類型必須明確的參數（缺的請先問我，不要自己決定）",g.k.join("、")]);
     bucket.detail.unshift(["玩法定義（請完全照這個定義實作，不要換成其他玩法）",g.d]);
   }
+  /* 思考深度：寫進限制的那幾條 */
+  THINK.forEach(x=>{ if(x.w==="limit"&&thinkOn(x.n))bucket.limit.push(["",x.t]); });
   /* 交付形式 */
   const fmts=(val._fmt||[]);
   if(fmts.length){
@@ -1020,7 +1044,10 @@ function build(){
   });
   L.push("# 執行順序");
   L.push("請嚴格照這個順序進行，每做完一步先停下來給我確認，不要一次做完全部：");
-  c.flow.forEach((x,i)=>L.push((i+1)+". "+x));
+  const flow=flowList(c);
+  flow.forEach((x,i)=>L.push((i+1)+". "+x));
+  const fl=$("flowlist"); fl.innerHTML="";
+  flow.forEach(x=>{const li=document.createElement("li");li.textContent=x;fl.appendChild(li);});
   if(fmts.indexOf("只要討論，先不要做")>-1||fmts.indexOf("畫面假樣（不寫程式）")>-1)
     L.push("注意：這一輪的交付形式不需要實作，所以只做到不用寫程式的步驟為止，後面的步驟等我確認後再進行。");
   L.push("");
